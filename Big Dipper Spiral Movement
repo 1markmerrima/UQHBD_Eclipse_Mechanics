@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Big Dipper Spiral Movement</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #0a0a2e, #16213e, #1a1a3a);
+            font-family: 'Courier New', monospace;
+            color: #ffffff;
+            overflow-x: auto;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            background: radial-gradient(circle at center, #1a1a3a, #0a0a2e);
+            border: 2px solid #4a9eff;
+            border-radius: 15px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        #starCanvas {
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        
+        #starCanvas:active {
+            cursor: grabbing;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #4a9eff;
+            font-weight: bold;
+        }
+        
+        input[type="range"] {
+            width: 150px;
+            accent-color: #4a9eff;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #4a9eff, #00d4ff);
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(74, 158, 255, 0.4);
+        }
+        
+        .info-panel {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            margin-top: 20px;
+        }
+        
+        .star-data {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .star-info {
+            background: rgba(74, 158, 255, 0.2);
+            padding: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #4a9eff;
+        }
+        
+        .coordinates {
+            font-family: monospace;
+            font-size: 0.9em;
+            color: #00d4ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🌌 Big Dipper Spiral Movement</h1>
+            <p>July 31, 2025 - 11:25 AM EDT</p>
+            <p>Visualizing the cosmic decimal harmonic progression through stellar node positions</p>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="starCanvas"></canvas>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="timeSlider">Time Progression (Hours)</label>
+                <input type="range" id="timeSlider" min="0" max="24" value="0" step="0.1">
+                <span id="timeValue">11:25 AM EDT</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="speedSlider">Animation Speed</label>
+                <input type="range" id="speedSlider" min="0.1" max="5" value="1" step="0.1">
+                <span id="speedValue">1x</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="rotationSlider">View Rotation</label>
+                <input type="range" id="rotationSlider" min="0" max="360" value="0" step="1">
+                <span id="rotationValue">0°</span>
+            </div>
+            
+            <div class="control-group">
+                <button id="playButton">▶️ Play Animation</button>
+                <button id="resetButton">🔄 Reset View</button>
+                <button id="spiralToggle">🌀 Toggle Spiral Trails</button>
+            </div>
+        </div>
+        
+        <div class="info-panel">
+            <h3>📊 Big Dipper Star Coordinates (J2025.5 Epoch)</h3>
+            <p>Accounting for precession and proper motion from J2000.0</p>
+            
+            <div class="star-data">
+                <div class="star-info">
+                    <strong>Dubhe (α UMa)</strong>
+                    <div class="coordinates">
+                        RA: 11h 03m 43s (165.93°)<br>
+                        Dec: +61° 45' 03" (+61.75°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Merak (β UMa)</strong>
+                    <div class="coordinates">
+                        RA: 11h 01m 50s (165.46°)<br>
+                        Dec: +56° 22' 56" (+56.38°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Phecda (γ UMa)</strong>
+                    <div class="coordinates">
+                        RA: 11h 53m 50s (178.46°)<br>
+                        Dec: +53° 41' 41" (+53.69°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Megrez (δ UMa)</strong>
+                    <div class="coordinates">
+                        RA: 12h 15m 26s (183.86°)<br>
+                        Dec: +57° 01' 56" (+57.03°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Alioth (ε UMa)</strong>
+                    <div class="coordinates">
+                        RA: 12h 54m 02s (193.51°)<br>
+                        Dec: +55° 57' 35" (+55.96°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Mizar (ζ UMa)</strong>
+                    <div class="coordinates">
+                        RA: 13h 23m 55s (200.98°)<br>
+                        Dec: +54° 55' 31" (+54.93°)
+                    </div>
+                </div>
+                
+                <div class="star-info">
+                    <strong>Alkaid (η UMa)</strong>
+                    <div class="coordinates">
+                        RA: 13h 47m 32s (206.88°)<br>
+                        Dec: +49° 18' 48" (+49.31°)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class BigDipperSpiral {
+            constructor() {
+                this.canvas = document.getElementById('starCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.animationId = null;
+                this.isPlaying = false;
+                this.showSpirals = true;
+                
+                // Star data with RA/Dec coordinates
+                this.stars = [
+                    { name: 'Dubhe', ra: 165.93, dec: 61.75, color: '#ffaa00' },
+                    { name: 'Merak', ra: 165.46, dec: 56.38, color: '#ffcc00' },
+                    { name: 'Phecda', ra: 178.46, dec: 53.69, color: '#ffdd00' },
+                    { name: 'Megrez', ra: 183.86, dec: 57.03, color: '#ffee00' },
+                    { name: 'Alioth', ra: 193.51, dec: 55.96, color: '#ffff00' },
+                    { name: 'Mizar', ra: 200.98, dec: 54.93, color: '#eeff00' },
+                    { name: 'Alkaid', ra: 206.88, dec: 49.31, color: '#ddff00' }
+                ];
+                
+                // Big Dipper constellation lines
+                this.connections = [
+                    [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], // Main line
+                    [0, 3] // Handle connection
+                ];
+                
+                this.spiralTrails = [];
+                this.currentTime = 0;
+                this.viewRotation = 0;
+                this.speed = 1;
+                
+                this.setupCanvas();
+                this.setupControls();
+                this.render();
+            }
+            
+            setupCanvas() {
+                const resizeCanvas = () => {
+                    const rect = this.canvas.getBoundingClientRect();
+                    this.canvas.width = rect.width * window.devicePixelRatio;
+                    this.canvas.height = rect.height * window.devicePixelRatio;
+                    this.ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+                    this.canvas.style.width = rect.width + 'px';
+                    this.canvas.style.height = rect.height + 'px';
+                    this.render();
+                };
+                
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+            }
+            
+            setupControls() {
+                const timeSlider = document.getElementById('timeSlider');
+                const speedSlider = document.getElementById('speedSlider');
+                const rotationSlider = document.getElementById('rotationSlider');
+                const playButton = document.getElementById('playButton');
+                const resetButton = document.getElementById('resetButton');
+                const spiralToggle = document.getElementById('spiralToggle');
+                
+                timeSlider.addEventListener('input', (e) => {
+                    this.currentTime = parseFloat(e.target.value);
+                    this.updateTimeDisplay();
+                    this.render();
+                });
+                
+                speedSlider.addEventListener('input', (e) => {
+                    this.speed = parseFloat(e.target.value);
+                    document.getElementById('speedValue').textContent = e.target.value + 'x';
+                });
+                
+                rotationSlider.addEventListener('input', (e) => {
+                    this.viewRotation = parseFloat(e.target.value);
+                    document.getElementById('rotationValue').textContent = e.target.value + '°';
+                    this.render();
+                });
+                
+                playButton.addEventListener('click', () => {
+                    this.toggleAnimation();
+                });
+                
+                resetButton.addEventListener('click', () => {
+                    this.reset();
+                });
+                
+                spiralToggle.addEventListener('click', () => {
+                    this.showSpirals = !this.showSpirals;
+                    this.spiralTrails = [];
+                    this.render();
+                });
+            }
+            
+            updateTimeDisplay() {
+                const baseHour = 11 + 25/60; // 11:25 AM
+                const currentHour = (baseHour + this.currentTime) % 24;
+                const hour = Math.floor(currentHour);
+                const minute = Math.floor((currentHour - hour) * 60);
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                const displayHour = hour === 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+                
+                document.getElementById('timeValue').textContent = 
+                    `${displayHour}:${minute.toString().padStart(2, '0')} ${ampm} EDT`;
+            }
+            
+            raDecToCartesian(ra, dec, radius = 1) {
+                const raRad = (ra * Math.PI) / 180;
+                const decRad = (dec * Math.PI) / 180;
+                
+                return {
+                    x: radius * Math.cos(decRad) * Math.cos(raRad),
+                    y: radius * Math.cos(decRad) * Math.sin(raRad),
+                    z: radius * Math.sin(decRad)
+                };
+            }
+            
+            project3DTo2D(point, width, height) {
+                const rotRad = (this.viewRotation * Math.PI) / 180;
+                
+                // Rotate around z-axis for view rotation
+                const rotX = point.x * Math.cos(rotRad) - point.y * Math.sin(rotRad);
+                const rotY = point.x * Math.sin(rotRad) + point.y * Math.cos(rotRad);
+                
+                // Simple perspective projection
+                const scale = 300;
+                const perspective = 2;
+                const factor = perspective / (perspective + point.z);
+                
+                return {
+                    x: width/2 + rotX * scale * factor,
+                    y: height/2 - rotY * scale * factor
+                };
+            }
+            
+            getStarPosition(star, timeOffset = 0) {
+                // Calculate Earth's rotation effect (15°/hour)
+                const rotationOffset = (this.currentTime + timeOffset) * 15;
+                const adjustedRA = star.ra - rotationOffset;
+                
+                // Add small spiral effect for precession (greatly exaggerated for visibility)
+                const spiralRadius = 1 + (this.currentTime + timeOffset) * 0.001;
+                const spiralOffset = (this.currentTime + timeOffset) * 0.5;
+                
+                return this.raDecToCartesian(adjustedRA + spiralOffset, star.dec, spiralRadius);
+            }
+            
+            render() {
+                const width = this.canvas.offsetWidth;
+                const height = this.canvas.offsetHeight;
+                
+                // Clear canvas with starfield background
+                this.ctx.fillStyle = 'rgba(10, 10, 46, 0.1)';
+                this.ctx.fillRect(0, 0, width, height);
+                
+                // Add background stars
+                this.ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                for (let i = 0; i < 200; i++) {
+                    const x = Math.random() * width;
+                    const y = Math.random() * height;
+                    this.ctx.beginPath();
+                    this.ctx.arc(x, y, 0.5, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                }
+                
+                // Draw spiral trails if enabled
+                if (this.showSpirals) {
+                    this.drawSpiralTrails(width, height);
+                }
+                
+                // Calculate current star positions
+                const currentPositions = this.stars.map(star => {
+                    const pos3D = this.getStarPosition(star);
+                    return this.project3DTo2D(pos3D, width, height);
+                });
+                
+                // Draw constellation lines
+                this.ctx.strokeStyle = 'rgba(74, 158, 255, 0.6)';
+                this.ctx.lineWidth = 2;
+                this.connections.forEach(([i, j]) => {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(currentPositions[i].x, currentPositions[i].y);
+                    this.ctx.lineTo(currentPositions[j].x, currentPositions[j].y);
+                    this.ctx.stroke();
+                });
+                
+                // Draw stars
+                this.stars.forEach((star, index) => {
+                    const pos = currentPositions[index];
+                    
+                    // Star glow effect
+                    const gradient = this.ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 15);
+                    gradient.addColorStop(0, star.color);
+                    gradient.addColorStop(0.5, star.color + '80');
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.beginPath();
+                    this.ctx.arc(pos.x, pos.y, 15, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    
+                    // Star core
+                    this.ctx.fillStyle = star.color;
+                    this.ctx.beginPath();
+                    this.ctx.arc(pos.x, pos.y, 4, 0, 2 * Math.PI);
+                    this.ctx.fill();
+                    
+                    // Star name
+                    this.ctx.fillStyle = '#ffffff';
+                    this.ctx.font = '12px Courier New';
+                    this.ctx.textAlign = 'center';
+                    this.ctx.fillText(star.name, pos.x, pos.y - 25);
+                });
+                
+                // Record positions for spiral trails
+                if (this.showSpirals) {
+                    this.spiralTrails.push(currentPositions.map(pos => ({...pos})));
+                    if (this.spiralTrails.length > 1000) {
+                        this.spiralTrails.shift();
+                    }
+                }
+            }
+            
+            drawSpiralTrails(width, height) {
+                if (this.spiralTrails.length < 2) return;
+                
+                this.stars.forEach((star, starIndex) => {
+                    this.ctx.strokeStyle = star.color + '40';
+                    this.ctx.lineWidth = 1;
+                    this.ctx.beginPath();
+                    
+                    let firstPoint = true;
+                    for (let i = 0; i < this.spiralTrails.length; i += 2) {
+                        const pos = this.spiralTrails[i][starIndex];
+                        if (firstPoint) {
+                            this.ctx.moveTo(pos.x, pos.y);
+                            firstPoint = false;
+                        } else {
+                            this.ctx.lineTo(pos.x, pos.y);
+                        }
+                    }
+                    this.ctx.stroke();
+                });
+            }
+            
+            animate() {
+                if (!this.isPlaying) return;
+                
+                this.currentTime += 0.05 * this.speed;
+                if (this.currentTime > 24) {
+                    this.currentTime = 0;
+                    this.spiralTrails = [];
+                }
+                
+                document.getElementById('timeSlider').value = this.currentTime;
+                this.updateTimeDisplay();
+                this.render();
+                
+                this.animationId = requestAnimationFrame(() => this.animate());
+            }
+            
+            toggleAnimation() {
+                this.isPlaying = !this.isPlaying;
+                const button = document.getElementById('playButton');
+                
+                if (this.isPlaying) {
+                    button.textContent = '⏸️ Pause';
+                    this.animate();
+                } else {
+                    button.textContent = '▶️ Play Animation';
+                    if (this.animationId) {
+                        cancelAnimationFrame(this.animationId);
+                    }
+                }
+            }
+            
+            reset() {
+                this.isPlaying = false;
+                this.currentTime = 0;
+                this.viewRotation = 0;
+                this.spiralTrails = [];
+                
+                document.getElementById('timeSlider').value = 0;
+                document.getElementById('rotationSlider').value = 0;
+                document.getElementById('playButton').textContent = '▶️ Play Animation';
+                document.getElementById('rotationValue').textContent = '0°';
+                
+                this.updateTimeDisplay();
+                this.render();
+                
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+            }
+        }
+        
+        // Initialize the visualization when the page loads
+        window.addEventListener('load', () => {
+            new BigDipperSpiral();
+        });
+    </script>
+</body>
+</html>
