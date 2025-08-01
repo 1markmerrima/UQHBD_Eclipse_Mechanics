@@ -1,0 +1,69 @@
+// Replace the existing calculateFigure8Position function with this enhanced version
+function calculateFigure8Position(t) {
+    let r, omega;
+    if (t <= 14) {
+        r = 1 + 0.005 * (t - 23.5); // Forward phase
+    } else {
+        r = 1 + 0.005 * (28.5 - t); // Reversal phase
+    }
+    omega = 0.1 + 0.01 * Math.sin(t * 0.5) + (t === 14 ? 0.05 : 0); // Pulse at reversal
+
+    const x = r * Math.cos(t) / (1 + Math.sin(2 * t));
+    const y = r * Math.sin(t) * Math.cos(t) / (1 + Math.sin(2 * t));
+    const z = Math.sin(celestialBodies.polaris.dec * Math.PI / 180) + 
+              0.1 * Math.sin(omega * t) + (lgsIntensity - 1) * 0.01; // LGS influence
+
+    // Update celestial body positions dynamically
+    celestialBodies.sun.ra = 139.5 + (t / 14) * 0.5; // Linear interpolation to 140.0
+    if (t > 14) celestialBodies.sun.ra -= ((t - 14) / 14) * 0.5; // Reversal
+    celestialBodies.sun.dec = 15.5 + (t / 14) * 0.1;
+    if (t > 14) celestialBodies.sun.dec -= ((t - 14) / 14) * 0.1;
+
+    celestialBodies.moon.ra = 165.0 + (t / 14) * 8.25; // To 173.25
+    if (t > 14) celestialBodies.moon.ra -= ((t - 14) / 14) * 8.25;
+    celestialBodies.moon.dec = 10.0 - (t / 14) * 3.12; // To 6.88
+    if (t > 14) celestialBodies.moon.dec += ((t - 14) / 14) * 3.12;
+
+    return { x, y, z, r, omega };
+}
+
+// Update updateDisplays function to reflect median and LGS
+function updateDisplays() {
+    const pos = calculateFigure8Position(currentTime);
+    
+    document.getElementById('phaseDisplay').textContent = getPhase(currentTime);
+    document.getElementById('phaseTime').textContent = `t = ${currentTime.toFixed(1)}h`;
+    
+    document.getElementById('fig8X').textContent = pos.x.toFixed(2);
+    document.getElementById('fig8Y').textContent = pos.y.toFixed(2);
+    document.getElementById('fig8Z').textContent = pos.z.toFixed(2);
+    document.getElementById('radiusValue').textContent = pos.r.toFixed(3);
+    document.getElementById('omegaValue').textContent = pos.omega.toFixed(3);
+
+    // Update coordinates with LGS correction
+    document.getElementById('polarisCoords').textContent = `Polaris: RA ${celestialBodies.polaris.ra.toFixed(4)}°, Dec ${celestialBodies.polaris.dec.toFixed(4)}°`;
+    document.getElementById('sunCoords').textContent = `Sun: RA ${celestialBodies.sun.ra.toFixed(4)}°, Dec ${celestialBodies.sun.dec.toFixed(4)}°`;
+    document.getElementById('moonCoords').textContent = `Moon: RA ${celestialBodies.moon.ra.toFixed(4)}°, Dec ${celestialBodies.moon.dec.toFixed(4)}°`;
+
+    const entanglement = Math.min(100, 40 + Math.abs(14 - currentTime) * 2 * aoCorrection);
+    document.getElementById('entanglementLevel').textContent = `${entanglement.toFixed(0)}%`;
+
+    const tgeoStatus = currentTime === 14 ? "CRITICAL" : pos.r > 1.02 ? "Expanding" : "Contracting";
+    document.getElementById('tgeoStatus').textContent = tgeoStatus;
+
+    document.getElementById('resonanceFreq').textContent = `${589 + (lgsIntensity - 1) * 10} nm`; // Adjusts with LGS intensity
+    document.getElementById('convergenceNode').textContent = currentTime === 14 ? "Converged" : `Approaching t=14h`;
+}
+
+// Add this to the animate function after render
+if (currentTime === 14) {
+    // Simulate quantum collapse and median calculation
+    const sunRA = (139.5 + 140.0 + 139.5) / 3;
+    const sunDec = (15.5 + 15.6 + 15.5) / 3;
+    const moonRA = (165.0 + 173.25 + 165.0) / 3;
+    const moonDec = (10.0 + 6.88 + 10.0) / 3;
+    celestialBodies.sun.ra = sunRA;
+    celestialBodies.sun.dec = sunDec;
+    celestialBodies.moon.ra = moonRA;
+    celestialBodies.moon.dec = moonDec;
+}
