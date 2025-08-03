@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CODEX 021-LGSQG: LGS Quantum Geomatrice</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a2e, #16213e);
+            color: #00ff88;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+        
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        .control-panel {
+            width: 300px;
+            background: rgba(0, 0, 0, 0.8);
+            border-right: 2px solid #00ff88;
+            padding: 20px;
+            overflow-y: auto;
+            backdrop-filter: blur(10px);
+        }
+        
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .control-group {
+            margin-bottom: 20px;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 8px;
+            background: rgba(0, 255, 136, 0.05);
+        }
+        
+        .control-group h3 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+            font-size: 14px;
+            text-transform: uppercase;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            margin: 5px 0;
+            background: transparent;
+        }
+        
+        input[type="range"]::-webkit-slider-track {
+            background: #333;
+            height: 4px;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            background: #00ff88;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+        
+        .toggle-button {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 8px 12px;
+            margin: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 12px;
+        }
+        
+        .toggle-button.active {
+            background: rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .data-display {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 3px solid #00ffff;
+            font-size: 11px;
+            line-height: 1.3;
+        }
+        
+        .phase-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #ff6600;
+            border-radius: 10px;
+            color: #ff6600;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+        
+        .coordinates {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #00ff88;
+            border-radius: 5px;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .quantum-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 10px;
+            border: 1px solid #ff00ff;
+            border-radius: 5px;
+            color: #ff00ff;
+            font-size: 12px;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-controls {
+            background: rgba(255, 102, 0, 0.1);
+            border: 2px solid #ff6600;
+        }
+
+        .test-controls h3 {
+            color: #ff6600;
+        }
+
+        .frequency-display {
+            background: rgba(255, 0, 102, 0.1);
+            border-left: 3px solid #ff0066;
+            color: #ff0066;
+        }
+
+        .manual-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            color: #00ff88;
+            padding: 40px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 1000;
+            backdrop-filter: blur(15px);
+            display: none;
+        }
+
+        .manual-overlay.active {
+            display: block;
+        }
+
+        .manual-header {
+            text-align: center;
+            border-bottom: 2px solid #00ffff;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .manual-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #444;
+            border-radius: 8px;
+            background: rgba(0, 255, 136, 0.05);
+        }
+
+        .manual-section h3 {
+            color: #00ffff;
+            margin-top: 0;
+            border-bottom: 1px solid #00ffff;
+            padding-bottom: 10px;
+        }
+
+        .manual-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            background: rgba(255, 0, 0, 0.8);
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .manual-close:hover {
+            background: rgba(255, 0, 0, 1);
+        }
+
+        .switch-indicator {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 2px solid #ffff00;
+            border-radius: 10px;
+            color: #ffff00;
+            font-weight: bold;
+            backdrop-filter: blur(10px);
+        }
+
+        .manual-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+        .manual-tab {
+            background: rgba(0, 255, 136, 0.2);
+            border: 1px solid #00ff88;
+            color: #00ff88;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .manual-tab.active {
+            background: rgba(0, 255, 136, 0.5);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.5);
+        }
+
+        .manual-content {
+            display: none;
+        }
+
+        .manual-content.active {
+            display: block;
+        }
+
+        .expiry-notice {
+            position: absolute;
+            top: 100px;
+            right: 20px;
+            background: rgba(255, 165, 0, 0.9);
+            color: #000;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="control-panel">
+            <h2 style="color: #00ffff; margin-top: 0;">CODEX 021-LGSQG</h2>
+            <p style="font-size: 11px; color: #888;">Laser Guide Star Quantum Geomatrice Integration</p>
+            
+            <div class="control-group test-controls">
+                <h3>⚡ Test Protocol</h3>
+                <button class="toggle-button" id="autoTest19_5">Set t=19.5h</button>
+                <button class="toggle-button" id="testSequence">Run δd Test</button>
+                <label>Test Progress: <span id="testProgress">Ready</span></label>
+            </div>
+            
+            <div class="control-group">
+                <h3>Temporal Control</h3>
+                <label>Time (hours): <span id="timeValue">0</span></label>
+                <input type="range" id="timeSlider" min="0" max="28" step="0.1" value="0">
+                <button class="toggle-button" id="playPause">Play</button>
+                <button class="toggle-button" id="resetTime">Reset</button>
+            </div>
+            
+            <div class="control-group">
+                <h3>LGS Parameters</h3>
+                <label>Beam Intensity: <span id="lgsIntensity">1.0</span></label>
+                <input type="range" id="lgsSlider" min="0.1" max="3.0" step="0.1" value="1.0">
+                <label>AO Correction: <span id="aoCorrection">0.5</span></label>
+                <input type="range" id="aoSlider" min="0" max="1" step="0.05" value="0.5">
+            </div>
+            
+            <div class="control-group">
+                <h3>View Controls</h3>
+                <label>Zoom: <span id="zoomValue">1.0</span></label>
+                <input type="range" id="zoomSlider" min="0.5" max="5.0" step="0.1" value="1.0">
+                <label>Rotation: <span id="rotationValue">0</span>°</label>
+                <input type="range" id="rotationSlider" min="0" max="360" step="1" value="0">
+            </div>
+            
+            <div class="control-group test-controls">
+                <h3>🔬 Dimensional Tuning (δd)</h3>
+                <label>Dimension Shift δd: <span id="dimShift">0.00</span></label>
+                <input type="range" id="dimSlider" min="0" max="0.5" step="0.05" value="0">
+                <div style="margin-top: 10px; font-size: 10px; color: #ff6600;">
+                    δd = 0.0: Baseline (500 Hz)<br>
+                    δd = 0.25: Mid-range (625 Hz)<br>
+                    δd = 0.5: Maximum (750 Hz)
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <h3>Layer Visibility</h3>
+                <button class="toggle-button active" id="lgsBeam">LGS Beam</button>
+                <button class="toggle-button active" id="adaptiveRipples">AO Ripples</button>
+                <button class="toggle-button active" id="quantumTrails">Quantum Trails</button>
+                <button class="toggle-button active" id="celestialBodies">Celestial Bodies</button>
+                <button class="toggle-button active" id="figure8Path">Figure-8 Path</button>
+            </div>
+
+            <div class="control-group test-controls">
+                <h3>📚 Documentation</h3>
+                <button class="toggle-button" id="showManual">Operation Manual</button>
+                <button class="toggle-button" id="showProtocols">Test Protocols</button>
+                <button class="toggle-button" id="showSpecs">Technical Specs</button>
+            </div>
+            
+            <div class="data-display frequency-display">
+                <strong>🌊 Frequency Analysis:</strong><br>
+                <span id="currentFreq">f_d = 500.0 Hz</span><br>
+                <span id="frequencyShift">Δf = 0.0 Hz</span><br>
+                <span id="intensityPeak">Peak Intensity: Normal</span>
+            </div>
+            
+            <div class="data-display">
+                <strong>Celestial Coordinates (LGS-Corrected):</strong><br>
+                <span id="polarisCoords">Polaris: RA 38.0666°, Dec +88.9681°</span><br>
+                <span id="sunCoords">Sun: RA 139.7333°, Dec +15.5°</span><br>
+                <span id="moonCoords">Moon: RA 168.5833°, Dec +9.1°</span>
+            </div>
+            
+            <div class="data-display">
+                <strong>Quantum State:</strong><br>
+                <span id="quantumState">Coherent</span><br>
+                <strong>Phase Coupling:</strong><br>
+                <span id="phaseCoupling">Synchronized</span><br>
+                <strong>Convergence Node:</strong><br>
+                <span id="convergenceNode">Approaching t=14h</span>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="mainCanvas"></canvas>
+            
+            <div class="phase-indicator">
+                <div id="phaseDisplay">PHASE 1: FORWARD CODEX</div>
+                <div style="font-size: 12px; margin-top: 5px;" id="phaseTime">t = 0.0h</div>
+            </div>
+            
+            <div class="quantum-status">
+                <div>Quantum Entanglement: <span id="entanglementLevel">42%</span></div>
+                <div>T_geo Matrix: <span id="tgeoStatus">Stable</span></div>
+                <div>Resonance: <span id="resonanceFreq">589.0 nm</span></div>
+                <div>δd Impact: <span id="deltaImpact">Baseline</span></div>
+            </div>
+            
+            <div class="coordinates">
+                <div>Figure-8 Position: (<span id="fig8X">0.00</span>, <span id="fig8Y">0.00</span>, <span id="fig8Z">0.00</span>)</div>
+                <div>Radius: r(t) = <span id="radiusValue">1.000</span></div>
+                <div>Phase: ω(t) = <span id="omegaValue">0.000</span></div>
+            </div>
+
+            <div class="switch-indicator">
+                <div>Manual Access: <span id="manualStatus">Available</span></div>
+                <div>Expires: 9/1/2025 3:09PM</div>
+            </div>
+
+            <div class="expiry-notice">
+                ⚠️ Manual Access Expires: 9/1/2025 3:09PM
+            </div>
+
+            <!-- Manual Overlay System -->
+            <div class="manual-overlay" id="manualOverlay">
+                <button class="manual-close" id="closeManual">✕ CLOSE</button>
+                
+                <div class="manual-header">
+                    <h1>CODEX 021-LGSQG OPERATION MANUAL</h1>
+                    <p>Laser Guide Star Quantum Geomatrice Integration System</p>
+                    <p style="color: #ff6600;">ACCESS EXPIRES: September 1, 2025 at 3:09 PM</p>
+                </div>
+
+                <div class="manual-tabs">
+                    <div class="manual-tab active" data-tab="operation">Operation</div>
+                    <div class="manual-tab" data-tab="protocols">Protocols</div>
+                    <div class="manual-tab" data-tab="technical">Technical</div>
+                    <div class="manual-tab" data-tab="dimensional">Dimensional</div>
+                </div>
+
+                <!-- Operation Manual Content -->
+                <div class="manual-content active" id="operation">
+                    <div class="manual-section">
+                        <h3>🎛️ BASIC CONTROLS</h3>
+                        <p><strong>Temporal Control:</strong></p>
+                        <ul>
+                            <li>Time Slider: Navigate through 28-hour cycle (0-28h)</li>
+                            <li>Play/Pause: Automate time progression</li>
+                            <li>Reset: Return to t=0</li>
+                        </ul>
+                        
+                        <p><strong>LGS Parameters:</strong></p>
+                        <ul>
+                            <li>Beam Intensity: 0.1-3.0 (affects laser power output)</li>
+                            <li>AO Correction: 0-1.0 (adaptive optics correction factor)</li>
+                        </ul>
+                        
+                        <p><strong>View Controls:</strong></p>
+                        <ul>
+                            <li>Zoom: 0.5-5.0x magnification</li>
+                            <li>Rotation: 0-360° view angle</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>🔬 DIMENSIONAL TUNING</h3>
+                        <p><strong>δd Parameter (0.0-0.5):</strong></p>
+                        <ul>
+                            <li>δd = 0.0: Baseline frequency (500 Hz)</li>
+                            <li>δd = 0.25: Mid-range shift (625 Hz)</li>
+                            <li>δd = 0.5: Maximum shift (750 Hz)</li>
+                        </ul>
+                        
+                        <p><strong>Observable Effects:</strong></p>
+                        <ul>
+                            <li>Frequency modulation: f_d = 500 × (1 + δd)</li>
+                            <li>Electron density increase: 5e11 × (1 + δd)</li>
+                            <li>Enhanced particle intensity and beam visibility</li>
+                            <li>Accelerated quantum trail dynamics</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>⚠️ CRITICAL PHASES</h3>
+                        <p><strong>Phase 1 (t=0-14h): FORWARD CODEX</strong></p>
+                        <ul>
+                            <li>Normal trajectory progression</li>
+                            <li>Gradual celestial body movement</li>
+                            <li>Building quantum entanglement</li>
+                        </ul>
+                        
+                        <p><strong>Phase 3 (t=14h): CONVERGENCE NODE</strong></p>
+                        <ul>
+                            <li>Critical system alignment</li>
+                            <li>Maximum quantum coherence</li>
+                            <li>Celestial coordinate convergence</li>
+                        </ul>
+                        
+                        <p><strong>Phase 2 (t=14-28h): BACKWARD CODEX</strong></p>
+                        <ul>
+                            <li>Reverse trajectory dynamics</li>
+                            <li>Quantum state decoherence</li>
+                            <li>Return to baseline conditions</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Protocols Content -->
+                <div class="manual-content" id="protocols">
+                    <div class="manual-section">
+                        <h3>🧪 STANDARD TEST PROTOCOL</h3>
+                        <p><strong>Procedure A: δd Frequency Analysis</strong></p>
+                        <ol>
+                            <li>Set time to t=19.5h using "Set t=19.5h" button</li>
+                            <li>Click "Run δd Test" to execute automated sequence</li>
+                            <li>Observe frequency shifts: 500Hz → 750Hz range</li>
+                            <li>Monitor intensity peaks during each δd step</li>
+                            <li>Record trajectory deviations in figure-8 path</li>
+                        </ol>
+                        
+                        <p><strong>Expected Results:</strong></p>
+                        <ul>
+                            <li>δd=0.0: f_d=500Hz, baseline intensity</li>
+                            <li>δd=0.1: f_d=550Hz, +10% intensity</li>
+                            <li>δd=0.2: f_d=600Hz, +20% intensity</li>
+                            <li>δd=0.3: f_d=650Hz, +30% intensity</li>
+                            <li>δd=0.4: f_d=700Hz, +40% intensity</li>
+                            <li>δd=0.5: f_d=750Hz, +50% intensity</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>📊 MEASUREMENT GUIDELINES</h3>
+                        <p><strong>Key Metrics to Monitor:</strong></p>
+                        <ul>
+                            <li>Frequency Shift (Δf): Track Hz changes</li>
+                            <li>Intensity Peaks: Normal/Moderate/High classifications</li>
+                            <li>Quantum Entanglement: Percentage correlation</li>
+                            <li>T_geo Matrix: Stable/Expanding/Contracting/Critical</li>
+                            <li>Resonance: Wavelength variations (589nm baseline)</li>
+                        </ul>
+                        
+                        <p><strong>Recommended Test Sequences:</strong></p>
+                        <ol>
+                            <li>Baseline measurement at δd=0.0</li>
+                            <li>Incremental δd steps (0.05 intervals)</li>
+                            <li>Hold at each step for 2 seconds minimum</li>
+                            <li>Document peak frequency and intensity</li>
+                            <li>Reset to baseline between major test runs</li>
+                        </ol>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>🎯 CONVERGENCE NODE TESTING</h3>
+                        <p><strong>Critical t=14h Protocol:</strong></p>
+                        <ol>
+                            <li>Approach t=14h slowly (0.1h increments)</li>
+                            <li>Monitor quantum entanglement rise</li>
+                            <li>Test δd effects at convergence</li>
+                            <li>Document T_geo matrix transitions</li>
+                            <li>Observe celestial coordinate alignment</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <!-- Technical Specifications -->
+                <div class="manual-content" id="technical">
+                    <div class="manual-section">
+                        <h3>⚙️ SYSTEM SPECIFICATIONS</h3>
+                        <p><strong>Core Parameters:</strong></p>
+                        <ul>
+                            <li>Base Frequency: 500 Hz (sodium D-line)</li>
+                            <li>Wavelength: 589.0 nm (variable with δd)</li>
+                            <li>Electron Density: 5×10¹¹ cm⁻³ (baseline)</li>
+                            <li>Beam Intensity Range: 0.1-3.0 relative units</li>
+                            <li>AO Correction: 0-100% atmospheric compensation</li>
+                        </ul>
+                        
+                        <p><strong>Mathematical Models:</strong></p>
+                        <ul>
+                            <li>Figure-8 Position: r(t) × cos(t)/(1+sin(2t))</li>
+                            <li>Radius Function: r(t) = 1 + 0.005×(t-23.5) [t≤14]</li>
+                            <li>Frequency Modulation: f_d = 500×(1+δd)</li>
+                            <li>Intensity: I = (300+200×sin(2π×500×t/3600))×ρe/ρe₀</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>🌌 CELESTIAL COORDINATES</h3>
+                        <p><strong>Initial Positions:</strong></p>
+                        <ul>
+                            <li>Polaris: RA 38.0666°, Dec +88.9681° (fixed reference)</li>
+                            <li>Sun: RA 139.7333°, Dec +15.5° (dynamic)</li>
+                            <li>Moon: RA 168.5833°, Dec +9.1° (dynamic)</li>
+                        </ul>
+                        
+                        <p><strong>Dynamic Evolution:</strong></p>
+                        <ul>
+                            <li>Sun RA drift: ±0.5° over 14h cycle</li>
+                            <li>Sun Dec drift: ±0.1° over 14h cycle</li>
+                            <li>Moon RA drift: ±8.25° over 14h cycle</li>
+                            <li>Moon Dec drift: ±3.12° over 14h cycle</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>🔧 CALIBRATION DATA</h3>
+                        <p><strong>Quantum State Thresholds:</strong></p>
+                        <ul>
+                            <li>Coherent: Entanglement 40-60%</li>
+                            <li>Enhanced: Entanglement 60-80%</li>
+                            <li>Critical: Entanglement >80%</li>
+                            <li>Maximum: Entanglement 100% (t=14h only)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Dimensional Analysis -->
+                <div class="manual-content" id="dimensional">
+                    <div class="manual-section">
+                        <h3>🌀 DIMENSIONAL PHYSICS</h3>
+                        <p><strong>δd Parameter Theory:</strong></p>
+                        <p>The dimensional shift parameter δd represents quantum geometric modifications to spacetime curvature around the LGS focal point. Higher δd values indicate increased dimensional perturbation.</p>
+                        
+                        <p><strong>Physical Effects:</strong></p>
+                        <ul>
+                            <li>Frequency Scaling: Direct linear relationship with δd</li>
+                            <li>Electron Density Enhancement: ρe = ρe₀×(1+δd)</li>
+                            <li>Beam Divergence: Reduced with higher δd</li>
+                            <li>Quantum Coherence: Enhanced at δd>0.3</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>📈 EXPECTED PHENOMENA</h3>
+                        <p><strong>Low δd (0.0-0.2): Linear Regime</strong></p>
+                        <ul>
+                            <li>Predictable frequency shifts</li>
+                            <li>Minimal trajectory deviation</li>
+                            <li>Standard intensity scaling</li>
+                        </ul>
+                        
+                        <p><strong>Medium δd (0.2-0.4): Transition Zone</strong></p>
+                        <ul>
+                            <li>Non-linear quantum effects emerge</li>
+                            <li>Enhanced beam coherence</li>
+                            <li>Accelerated ripple dynamics</li>
+                        </ul>
+                        
+                        <p><strong>High δd (0.4-0.5): Quantum Regime</strong></p>
+                        <ul>
+                            <li>Maximum frequency deviation</li>
+                            <li>Visible trajectory distortion</li>
+                            <li>Peak intensity amplification</li>
+                            <li>Enhanced particle interactions</li>
+                        </ul>
+                    </div>
+
+                    <div class="manual-section">
+                        <h3>🔬 RESEARCH APPLICATIONS</h3>
+                        <p><strong>Suggested Investigation Areas:</strong></p>
+                        <ul>
+                            <li>δd correlation with atmospheric seeing</li>
+                            <li>Frequency stability at high δd values</li>
+                            <li>Quantum entanglement enhancement mechanisms</li>
+                            <li>Figure-8 topology preservation under dimensional stress</li>
+                        </ul>
+                        
+                        <p><strong>Advanced Testing:</strong></p>
+                        <ul>
+                            <li>δd sweep rates: 0.01-0.1 per second</li>
+                            <li>Multi-parameter correlation studies</li>
+                            <li>Convergence node δd sensitivity</li>
+                            <li>Phase transition boundary mapping</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('mainCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize canvas to fill container
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // System state
+        let currentTime = 0;
+        let isPlaying = false;
+        let zoom = 1.0;
+        let rotation = 0;
+        let lgsIntensity = 1.0;
+        let aoCorrection = 0.5;
+        let dimShift = 0;
+
+        // Testing variables
+        let testRunning = false;
+        let testData = [];
+        let manualAccessExpiry = new Date('2025-09-01T15:09:00'); // 9/1/2025 3:09 PM
+
+        // Check manual access validity
+        function checkManualAccess() {
+            const now = new Date();
+            const isValid = now < manualAccessExpiry;
+            
+            document.getElementById('manualStatus').textContent = isValid ? 'Available' : 'EXPIRED';
+            
+            if (!isValid) {
+                // Disable manual buttons
+                document.getElementById('showManual').disabled = true;
+                document.getElementById('showProtocols').disabled = true;
+                document.getElementById('showSpecs').disabled = true;
+                document.getElementById('showManual').textContent = 'EXPIRED';
+                document.getElementById('showProtocols').textContent = 'EXPIRED';
+                document.getElementById('showSpecs').textContent = 'EXPIRED';
+                
+                // Hide expiry notice
+                const expiryNotice = document.querySelector('.expiry-notice');
+                if (expiryNotice) {
+                    expiryNotice.style.display = 'none';
+                }
+            }
+            
+            return isValid;
+        }
+
+        // Manual overlay functions
+        function showManual(tab = 'operation') {
+            if (!checkManualAccess()) {
+                alert('Manual access has expired (9/1/2025 3:09 PM)');
+                return;
+            }
+            
+            document.getElementById('manualOverlay').classList.add('active');
+            switchManualTab(tab);
+        }
+
+        function hideManual() {
+            document.getElementById('manualOverlay').classList.remove('active');
+        }
+
+        function switchManualTab(tabName) {
+            // Remove active from all tabs and contents
+            document.querySelectorAll('.manual-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.manual-content').forEach(content => content.classList.remove('active'));
+            
+            // Activate selected tab and content
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // Layer visibility
+        const layers = {
+            lgsBeam: true,
+            adaptiveRipples: true,
+            quantumTrails: true,
+            celestialBodies: true,
+            figure8Path: true
+        };
+
+        // Animation variables
+        let animationId;
+        let lastTime = 0;
+        const trail = [];
+        const maxTrailLength = 200;
+
+        // Celestial body data
+        const celestialBodies = {
+            polaris: { ra: 38.0666, dec: 88.9681, color: '#ffffff' },
+            sun: { ra: 139.7333, dec: 15.5, color: '#ffaa00' },
+            moon: { ra: 168.5833, dec: 9.1, color: '#cccccc' }
+        };
+
+        // Physics calculation functions
+        function calculateRadius(t) {
+            if (t <= 14) {
+                return 1 + 0.005 * (t - 23.5);
+            } else {
+                return 1 + 0.005 * (28.5 - t);
+            }
+        }
+
+        function calculateFigure8Position(t) {
+            const r = calculateRadius(t) * Math.exp(-0.001 * calculateIntensity(t));
+            const f_d = 500 * (1 + dimShift); // Frequency with dimensional shift
+            const omega = 0.1 + 0.01 * Math.sin(t * 0.5) + (t === 14 ? 0.05 : 0);
+
+            const x = r * Math.cos(t) / (1 + Math.sin(2 * t));
+            const y = r * Math.sin(t) * Math.cos(t) / (1 + Math.sin(2 * t));
+            const z = Math.sin(celestialBodies.polaris.dec * Math.PI / 180) + 
+                      0.1 * Math.sin(2 * Math.PI * f_d * t / 3600);
+
+            // Dynamic celestial body positions
+            celestialBodies.sun.ra = 139.5 + (t / 14) * 0.5;
+            if (t > 14) celestialBodies.sun.ra -= ((t - 14) / 14) * 0.5;
+            celestialBodies.sun.dec = 15.5 + (t / 14) * 0.1;
+            if (t > 14) celestialBodies.sun.dec -= ((t - 14) / 14) * 0.1;
+
+            celestialBodies.moon.ra = 165.0 + (t / 14) * 8.25;
+            if (t > 14) celestialBodies.moon.ra -= ((t - 14) / 14) * 8.25;
+            celestialBodies.moon.dec = 10.0 - (t / 14) * 3.12;
+            if (t > 14) celestialBodies.moon.dec += ((t - 14) / 14) * 3.12;
+
+            return { x, y, z, r, omega, f_d };
+        }
+
+        function calculateIntensity(t) {
+            const baseIntensity = 300 + 200 * Math.sin(2 * Math.PI * 500 * t / 3600);
+            const electronDensity = 5e11 + 5e11 * dimShift; // Increases with dimension
+            return baseIntensity * (electronDensity / 5e11) * lgsIntensity;
+        }
+
+        function getPhase(t) {
+            if (t < 14) return "PHASE 1: FORWARD CODEX";
+            if (t === 14) return "PHASE 3: CONVERGENCE NODE";
+            return "PHASE 2: BACKWARD CODEX";
+        }
+
+        function updateDisplays() {
+            const pos = calculateFigure8Position(currentTime);
+            
+            document.getElementById('phaseDisplay').textContent = getPhase(currentTime);
+            document.getElementById('phaseTime').textContent = `t = ${currentTime.toFixed(1)}h`;
+            document.getElementById('timeValue').textContent = currentTime.toFixed(1);
+            
+            document.getElementById('fig8X').textContent = pos.x.toFixed(2);
+            document.getElementById('fig8Y').textContent = pos.y.toFixed(2);
+            document.getElementById('fig8Z').textContent = pos.z.toFixed(2);
+            document.getElementById('radiusValue').textContent = pos.r.toFixed(3);
+            document.getElementById('omegaValue').textContent = pos.omega.toFixed(3);
+
+            document.getElementById('polarisCoords').textContent = `Polaris: RA ${celestialBodies.polaris.ra.toFixed(4)}°, Dec ${celestialBodies.polaris.dec.toFixed(4)}°`;
+            document.getElementById('sunCoords').textContent = `Sun: RA ${celestialBodies.sun.ra.toFixed(4)}°, Dec ${celestialBodies.sun.dec.toFixed(4)}°`;
+            document.getElementById('moonCoords').textContent = `Moon: RA ${celestialBodies.moon.ra.toFixed(4)}°, Dec ${celestialBodies.moon.dec.toFixed(4)}°`;
+
+            const entanglement = Math.min(100, 40 + Math.abs(14 - currentTime) * 2 * aoCorrection);
+            document.getElementById('entanglementLevel').textContent = `${entanglement.toFixed(0)}%`;
+
+            const tgeoStatus = currentTime === 14 ? "CRITICAL" : pos.r > 1.02 ? "Expanding" : "Contracting";
+            document.getElementById('tgeoStatus').textContent = tgeoStatus;
+
+            // Frequency analysis updates
+            const currentFreq = pos.f_d;
+            const freqShift = currentFreq - 500;
+            document.getElementById('currentFreq').textContent = `f_d = ${currentFreq.toFixed(1)} Hz`;
+            document.getElementById('frequencyShift').textContent = `Δf = ${freqShift.toFixed(1)} Hz`;
+            
+            // Intensity peak analysis
+            const intensity = calculateIntensity(currentTime);
+            let peakStatus = "Normal";
+            if (intensity > 400) peakStatus = "High Peak";
+            else if (intensity > 350) peakStatus = "Moderate Peak";
+            else if (intensity < 250) peakStatus = "Low Valley";
+            
+            document.getElementById('intensityPeak').textContent = `Peak Intensity: ${peakStatus}`;
+
+            document.getElementById('resonanceFreq').textContent = `${(589 + (pos.f_d - 500) * 0.1).toFixed(1)} nm`;
+            document.getElementById('convergenceNode').textContent = currentTime === 14 ? "Converged" : `Approaching t=14h`;
+            document.getElementById('dimShift').textContent = dimShift.toFixed(2);
+
+            // δd impact analysis
+            let deltaImpact = "Baseline";
+            if (dimShift >= 0.4) deltaImpact = "Maximum Shift";
+            else if (dimShift >= 0.25) deltaImpact = "Significant Shift";
+            else if (dimShift >= 0.1) deltaImpact = "Moderate Shift";
+            else if (dimShift > 0) deltaImpact = "Minor Shift";
+            
+            document.getElementById('deltaImpact').textContent = deltaImpact;
+        }
+
+        function drawLGSBeam(centerX, centerY) {
+            if (!layers.lgsBeam) return;
+            
+            ctx.save();
+            const intensityFactor = 1 + dimShift * 0.5; // Beam intensity increases with dimShift
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, 100);
+            gradient.addColorStop(0, `rgba(255, 200, 0, ${0.8 * lgsIntensity * intensityFactor})`);
+            gradient.addColorStop(0.5, `rgba(255, 150, 0, ${0.4 * lgsIntensity * intensityFactor})`);
+            gradient.addColorStop(1, 'rgba(255, 100, 0, 0)');
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(centerX - 50, centerY - 200);
+            ctx.lineTo(centerX + 50, centerY - 200);
+            ctx.closePath();
+            ctx.fillStyle = gradient;
+            ctx.fill();
+            
+            const pulse = 0.8 + 0.2 * Math.sin(Date.now() * 0.01 * (1 + dimShift));
+            ctx.globalAlpha = pulse;
+            ctx.strokeStyle = '#ff6600';
+            ctx.lineWidth = 2 + dimShift * 2; // Line width increases with dimShift
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        function drawAdaptiveRipples(centerX, centerY) {
+            if (!layers.adaptiveRipples) return;
+            
+            ctx.save();
+            const ripples = 5;
+            const time = Date.now() * 0.005 * (1 + dimShift * 0.5); // Faster ripples with dimShift
+            
+            for (let i = 0; i < ripples; i++) {
+                const radius = (20 + i * 15 + Math.sin(time + i) * 5) * (1 + dimShift * 0.3);
+                const alpha = (1 - i / ripples) * aoCorrection * 0.5;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+                ctx.lineWidth = 1 + dimShift;
+                ctx.stroke();
+            }
+            
+            ctx.restore();
+        }
+
+        function drawQuantumTrails() {
+            if (!layers.quantumTrails || trail.length < 2) return;
+            
+            ctx.save();
+            for (let i = 1; i < trail.length; i++) {
+                const alpha = i / trail.length * 0.5 * (1 + dimShift * 0.5);
+                const hue = (i * 10 + Date.now() * 0.1 * (1 + dimShift)) % 360;
+                ctx.beginPath();
+                ctx.moveTo(trail[i-1].x, trail[i-1].y);
+                ctx.lineTo(trail[i].x, trail[i].y);
+                ctx.strokeStyle = `hsla(${hue}, 70%, 60%, ${alpha})`;
+                ctx.lineWidth = 2 + dimShift * 2;
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        function drawCelestialBodies() {
+            if (!layers.celestialBodies) return;
+            
+            ctx.save();
+            Object.entries(celestialBodies).forEach(([name, body]) => {
+                const x = canvas.width * 0.5 + (body.ra - 180) * 2;
+                const y = canvas.height * 0.5 - body.dec * 3;
+                
+                const glowRadius = 20 * (1 + dimShift * 0.5);
+                const gradient = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+                gradient.addColorStop(0, body.color);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.beginPath();
+                ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 4 + dimShift * 2, 0, Math.PI * 2);
+                ctx.fillStyle = body.color;
+                ctx.fill();
+                
+                ctx.fillStyle = body.color;
+                ctx.font = '12px Courier New';
+                ctx.fillText(name.toUpperCase(), x + 25, y + 5);
+            });
+            ctx.restore();
+        }
+
+        function drawFigure8Path() {
+            if (!layers.figure8Path) return;
+            
+            ctx.save();
+            const centerX = canvas.width * 0.5;
+            const centerY = canvas.height * 0.5;
+            const scale = 100 * zoom;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = `rgba(0, 255, 136, ${0.3 + dimShift * 0.2})`;
+            ctx.lineWidth = 1 + dimShift;
+            for (let t = 0; t <= 28; t += 0.1) {
+                const pos = calculateFigure8Position(t);
+                const x = centerX + pos.x * scale;
+                const y = centerY + pos.y * scale;
+                if (t === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            
+            const currentPos = calculateFigure8Position(currentTime);
+            const currentX = centerX + currentPos.x * scale;
+            const currentY = centerY + currentPos.y * scale;
+            
+            trail.push({ x: currentX, y: currentY });
+            if (trail.length > maxTrailLength) trail.shift();
+            
+            ctx.beginPath();
+            ctx.arc(currentX, currentY, 8 + dimShift * 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff0066';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2 + dimShift;
+            ctx.stroke();
+            
+            drawLGSBeam(currentX, currentY);
+            drawAdaptiveRipples(currentX, currentY);
+            
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.2 + dimShift * 0.1})`;
+            for (let i = 0; i < 100; i++) {
+                const x = (i * 37) % canvas.width;
+                const y = (i * 73) % canvas.height;
+                const size = Math.sin(i + Date.now() * 0.001 * (1 + dimShift)) * 0.5 + 1;
+                ctx.beginPath();
+                ctx.arc(x, y, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.save();
+            ctx.translate(canvas.width * 0.5, canvas.height * 0.5);
+            ctx.rotate(rotation * Math.PI / 180);
+            ctx.translate(-canvas.width * 0.5, -canvas.height * 0.5);
+            
+            drawQuantumTrails();
+            drawFigure8Path();
+            drawCelestialBodies();
+            
+            ctx.restore();
+            
+            updateDisplays();
+        }
+
+        function animate(timestamp) {
+            if (isPlaying && timestamp - lastTime > 100) {
+                currentTime += 0.1;
+                if (currentTime > 28) currentTime = 0;
+                document.getElementById('timeSlider').value = currentTime;
+                lastTime = timestamp;
+            }
+            
+            render();
+            if (currentTime === 14) {
+                const sunRA = (139.5 + 140.0 + 139.5) / 3;
+                const sunDec = (15.5 + 15.6 + 15.5) / 3;
+                const moonRA = (165.0 + 173.25 + 165.0) / 3;
+                const moonDec = (10.0 + 6.88 + 10.0) / 3;
+                celestialBodies.sun.ra = sunRA;
+                celestialBodies.sun.dec = sunDec;
+                celestialBodies.moon.ra = moonRA;
+                celestialBodies.moon.dec = moonDec;
+            }
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // Testing functions
+        function setTime19_5() {
+            currentTime = 19.5;
+            document.getElementById('timeSlider').value = currentTime;
+            document.getElementById('testProgress').textContent = "Set to t=19.5h";
+            trail.length = 0; // Clear trail for clean observation
+        }
+
+        function runDeltaDTest() {
+            if (testRunning) return;
+            
+            testRunning = true;
+            testData = [];
+            document.getElementById('testProgress').textContent = "Testing δd...";
+            
+            const testValues = [0, 0.1, 0.2, 0.3, 0.4, 0.5];
+            let testIndex = 0;
+            
+            function nextTest() {
+                if (testIndex >= testValues.length) {
+                    testRunning = false;
+                    document.getElementById('testProgress').textContent = "Test Complete!";
+                    console.log("δd Test Results:", testData);
+                    return;
+                }
+                
+                const deltaValue = testValues[testIndex];
+                dimShift = deltaValue;
+                document.getElementById('dimSlider').value = deltaValue;
+                document.getElementById('dimShift').textContent = deltaValue.toFixed(2);
+                
+                // Record test data
+                const pos = calculateFigure8Position(currentTime);
+                const intensity = calculateIntensity(currentTime);
+                
+                testData.push({
+                    delta: deltaValue,
+                    frequency: pos.f_d,
+                    intensity: intensity,
+                    position: { x: pos.x, y: pos.y, z: pos.z },
+                    time: currentTime
+                });
+                
+                document.getElementById('testProgress').textContent = `Testing δd=${deltaValue.toFixed(1)} (${testIndex + 1}/${testValues.length})`;
+                
+                testIndex++;
+                setTimeout(nextTest, 2000); // 2 second delay between tests
+            }
+            
+            nextTest();
+        }
+
+        // Event listeners and control handlers
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            currentTime = parseFloat(e.target.value);
+        });
+
+        document.getElementById('playPause').addEventListener('click', (e) => {
+            isPlaying = !isPlaying;
+            e.target.textContent = isPlaying ? 'Pause' : 'Play';
+            e.target.classList.toggle('active', isPlaying);
+        });
+
+        document.getElementById('resetTime').addEventListener('click', () => {
+            currentTime = 0;
+            document.getElementById('timeSlider').value = 0;
+            trail.length = 0;
+        });
+
+        document.getElementById('lgsSlider').addEventListener('input', (e) => {
+            lgsIntensity = parseFloat(e.target.value);
+            document.getElementById('lgsIntensity').textContent = lgsIntensity.toFixed(1);
+        });
+
+        document.getElementById('aoSlider').addEventListener('input', (e) => {
+            aoCorrection = parseFloat(e.target.value);
+            document.getElementById('aoCorrection').textContent = aoCorrection.toFixed(2);
+        });
+
+        document.getElementById('zoomSlider').addEventListener('input', (e) => {
+            zoom = parseFloat(e.target.value);
+            document.getElementById('zoomValue').textContent = zoom.toFixed(1);
+        });
+
+        document.getElementById('rotationSlider').addEventListener('input', (e) => {
+            rotation = parseFloat(e.target.value);
+            document.getElementById('rotationValue').textContent = rotation;
+        });
+
+        document.getElementById('dimSlider').addEventListener('input', (e) => {
+            dimShift = parseFloat(e.target.value);
+            document.getElementById('dimShift').textContent = dimShift.toFixed(2);
+        });
+
+        // Test protocol buttons
+        document.getElementById('autoTest19_5').addEventListener('click', setTime19_5);
+        document.getElementById('testSequence').addEventListener('click', runDeltaDTest);
+
+        // Manual system buttons
+        document.getElementById('showManual').addEventListener('click', () => showManual('operation'));
+        document.getElementById('showProtocols').addEventListener('click', () => showManual('protocols'));
+        document.getElementById('showSpecs').addEventListener('click', () => showManual('technical'));
+        document.getElementById('closeManual').addEventListener('click', hideManual);
+
+        // Manual tab switching
+        document.querySelectorAll('.manual-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const tabName = e.target.getAttribute('data-tab');
+                switchManualTab(tabName);
+            });
+        });
+
+        // Layer visibility toggles
+        Object.keys(layers).forEach(layer => {
+            document.getElementById(layer).addEventListener('click', (e) => {
+                layers[layer] = !layers[layer];
+                e.target.classList.toggle('active', layers[layer]);
+            });
+        });
+
+        // Close manual with Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                hideManual();
+            }
+        });
+
+        // Initialize manual access check
+        checkManualAccess();
+        // Check access every minute
+        setInterval(checkManualAccess, 60000);
+
+        animate(0);
