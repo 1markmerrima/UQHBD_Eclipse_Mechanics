@@ -1,0 +1,227 @@
+// In global scope:
+let A_0 = 1.5; // 1.5 × 10^0
+let V_0 = 700; // 7.0 × 10^2
+const gamma = 1;
+const T_eff = 269;
+const k = 0.01;
+const r_0 = { x: 0, y: 0, z: Math.sin(88.9681° * Math.PI / 180) };
+let currentTime = 0.333; // Start at 0.333 hours
+let isPlaying = false;
+let isSimMode = false;
+let animationId = null;
+const msPerHour = 3600000; // Milliseconds per hour
+const dt = 1 / msPerHour; // 1 ms in hours (0.00000027778)
+const sigma = 0.1;
+
+// Animation control
+function stopAnimation() {
+    if (animationId) cancelAnimationFrame(animationId);
+    animationId = null;
+}
+
+function resizeCanvas() {
+    canvas.width = canvas.parentElement.clientWidth || 800; // Fallback width
+    canvas.height = canvas.parentElement.clientHeight || 600; // Fallback height
+}
+setTimeout(resizeCanvas, 0); // Defer to ensure DOM is rendered
+window.addEventListener('resize', () => setTimeout(resizeCanvas, 0));
+
+// Physics and rendering functions (unchanged, included for completeness)
+function calculateRadius(t) {
+    if (t <= 14) return 1 + 0.005 * (t - 23.5);
+    else return 1 + 0.005 * (28.5 - t);
+}
+
+function calculateFigure8Position(t) {
+    const r = calculateRadius(t) * Math.exp(-0.001 * calculateIntensity(t));
+    const f_d = 500 * (1 + dimShift);
+    const omega = 0.1 + 0.01 * Math.sin(t * 0.5) + (t === 14 ? 0.05 : 0);
+    const A_r_t = A_0 * Math.sin(2 * Math.PI * f_d * t / 3600);
+    const B = (A_0 * f_d) / (2 * Math.PI) * 10;
+    const f_tera = (gamma * B) * 1e9;
+    const V_r_t = V_0 * Math.cos(2 * Math.PI * f_tera * t / 3600) * Math.exp(-dist**2 / sigma**2);
+    const phaseShift = A_r_t + V_r_t + gamma * B * t;
+    const drag = 1 - k * B * B;
+    const scale = t >= 0 ? r * 1e6 : r * 1e6 * Math.sign(t);
+    const x = scale * Math.cos(t) / (1 + Math.sin(2 * t)) * drag * Math.exp(-phaseShift);
+    const y = scale * Math.sin(t) * Math.cos(t) / (1 + Math.sin(2 * t)) * drag * Math.exp(-phaseShift);
+    const z = Math.sin(celestialBodies.polaris.dec * Math.PI / 180) + 
+              0.1 * Math.sin(2 * Math.PI * f_tera * t / 3600 + phaseShift);
+    const dist = Math.sqrt(x**2 + y**2 + (z - r_0.z)**2);
+    return { x, y, z, r, omega, f_d, f_tera, dist };
+}
+
+function calculateIntensity(t) {
+    const pos = calculateFigure8Position(t);
+    const B = (A_0 * pos.f_d) / (2 * Math.PI) * 10;
+    const f_tera = (gamma * B) * 1e9;
+    const baseIntensity = 3.0e2 + 2.0e2 * Math.sin(2 * Math.PI * f_tera * t / 3600);
+    const valleyFactor = Math.abs(t) <= 0.333 ? (t === 0 ? 0.5 : 1) : 1;
+    const electronDensity = 5e11 + 5e11 * dimShift + 1e14 * Math.abs(A_r_t) * Math.exp(-T_eff / 300) * B * B;
+    return valleyFactor * baseIntensity * (electronDensity / 5e11) * lgsIntensity * Math.exp(-pos.dist**2 / sigma**2);
+}
+
+function updateDisplays() {
+    const pos = calculateFigure8Position(currentTime);
+    document.getElementById('phaseDisplay').textContent = getPhase(currentTime);
+    document.getElementById('phaseTime').textContent = `t = ${currentTime.toFixed(3)}h`;
+    document.getElementById('fig8X').textContent = pos.x.toFixed(2);
+    document.getElementById('fig8Y').textContent = pos.y.toFixed(2);
+    document.getElementById('fig8Z').textContent = pos.z.toFixed(2);
+    document.getElementById('radiusValue').textContent = pos.r.toFixed(3);
+    document.getElementById('omegaValue').textContent = pos.omega.toFixed(3);
+    document.getElementById('polarisCoords').textContent = `Polaris: RA ${celestialBodies.polaris.ra.toFixed(4)}°, Dec ${celestialBodies.polaris.dec.toFixed(4)}°`;
+    document.getElementById('sunCoords').textContent = `Sun: RA ${celestialBodies.sun.ra.toFixed(4)}°, Dec ${celestialBodies.sun.dec.toFixed(4)}°`;
+    document.getElementById('moonCoords').textContent = `Moon: RA ${celestialBodies.moon.ra.toFixed(4)}°, Dec ${celestialBodies.moon.dec.toFixed(4)}°`;
+    const entanglement = Math.min(100, 40 + Math.abs(14 - currentTime) * 2 * aoCorrection);
+    document.getElementById('entanglementLevel').textContent = `${entanglement.toFixed(0)}%`;
+    const tgeoStatus = currentTime === 14 ? "CRITICAL" : pos.r > 1.02 ? "Expanding" : "Contracting";
+    document.getElementById('tgeoStatus').textContent = tgeoStatus;
+    document.getElementById('resonanceFreq').textContent = `${589 + (pos.f_d - 500) * 0.1} nm`;
+    document.getElementById('convergenceNode').textContent = currentTime === 14 ? "Converged" : `Approaching t=14h`;
+    document.getElementById('dimShift').textContent = dimShift.toFixed(2);
+    document.getElementById('a0Value').textContent = A_0.toFixed(1);
+    document.getElementById('v0Value').textContent = (V_0 / 100).toFixed(1);
+}
+
+function drawAdaptiveRipples(centerX, centerY) {
+    if (!layers.adaptiveRipples) return;
+    ctx.save();
+    const time = performance.now() * 0.005; // Use performance.now() for monotonic timing
+    const ripples = 5;
+    for (let i = 0; i < ripples; i++) {
+        const radius = 20 + i * 15 + Math.sin(time + i) * 5;
+        const alpha = (1 - i / ripples) * aoCorrection * 0.5;
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(0, 255, 255, ${alpha})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+    ctx.restore();
+}
+
+// Rendering function (unchanged, included for completeness)
+function render() {
+    ctx.fillStyle = 'rgba(10, 10, 10, 0.1)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+    for (let i = 0; i < 100; i++) {
+        const x = (i * 37) % canvas.width;
+        const y = (i * 73) % canvas.height;
+        const size = Math.sin(i + performance.now() * 0.001) * 0.5 + 1;
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.save();
+    ctx.translate(canvas.width * 0.5, canvas.height * 0.5);
+    ctx.rotate(rotation * Math.PI / 180);
+    ctx.translate(-canvas.width * 0.5, -canvas.height * 0.5);
+    drawQuantumTrails();
+    drawFigure8Path();
+    drawCelestialBodies();
+    ctx.restore();
+    updateDisplays();
+}
+
+// Animation loops
+function updateSimulation() {
+    if (isSimMode) {
+        currentTime += dt;
+        if (currentTime > 0.333) currentTime = -0.333;
+        if (currentTime < -0.333) currentTime = 0.333;
+        document.getElementById('timeSlider').value = currentTime;
+        document.getElementById('timeValue').textContent = currentTime.toFixed(3);
+    }
+    render();
+    animationId = requestAnimationFrame(updateSimulation); // Store ID
+}
+
+function animate(timestamp) {
+    if (isPlaying && timestamp - lastTime > 100) {
+        currentTime += 0.1;
+        if (currentTime > 28) currentTime = 0;
+        document.getElementById('timeSlider').value = currentTime;
+        lastTime = timestamp;
+    }
+    render();
+    if (currentTime === 14) {
+        const sunRA = (139.5 + 140.0 + 139.5) / 3;
+        const sunDec = (15.5 + 15.6 + 15.5) / 3;
+        const moonRA = (165.0 + 173.25 + 165.0) / 3;
+        const moonDec = (10.0 + 6.88 + 10.0) / 3;
+        celestialBodies.sun.ra = sunRA;
+        celestialBodies.sun.dec = sunDec;
+        celestialBodies.moon.ra = moonRA;
+        celestialBodies.moon.dec = moonDec;
+    }
+    animationId = requestAnimationFrame(animate);
+}
+
+// Event listeners
+document.getElementById('timeSlider').addEventListener('input', (e) => {
+    currentTime = parseFloat(e.target.value);
+    stopAnimation();
+    isPlaying = false;
+    isSimMode = false;
+    document.getElementById('playPause').textContent = 'Play';
+    document.getElementById('playPause').classList.remove('active');
+    document.getElementById('simMode').textContent = 'Sim Mode';
+    document.getElementById('simMode').classList.remove('active');
+});
+
+document.getElementById('playPause').addEventListener('click', (e) => {
+    stopAnimation(); // Prevent multiple loops
+    if (isSimMode) {
+        isSimMode = false;
+        document.getElementById('simMode').classList.remove('active');
+        e.target.textContent = 'Play';
+        e.target.classList.remove('active');
+    } else {
+        isPlaying = !isPlaying;
+        e.target.textContent = isPlaying ? 'Pause' : 'Play';
+        e.target.classList.toggle('active', isPlaying);
+        if (isPlaying) {
+            animate(0);
+        }
+    }
+});
+
+document.getElementById('simMode').addEventListener('click', (e) => {
+    stopAnimation(); // Cancel current animation frame
+    isSimMode = !isSimMode;
+    e.target.classList.toggle('active', isSimMode);
+    if (isSimMode) {
+        isPlaying = false;
+        document.getElementById('playPause').textContent = 'Stop Sim';
+        document.getElementById('playPause').classList.add('active');
+        updateSimulation(); // Start high-frequency loop
+    } else {
+        document.getElementById('playPause').textContent = 'Play';
+        document.getElementById('playPause').classList.remove('active');
+    }
+});
+
+document.getElementById('resetTime').addEventListener('click', () => {
+    stopAnimation();
+    currentTime = 0.333;
+    isPlaying = false;
+    isSimMode = false;
+    document.getElementById('timeSlider').value = 0.333;
+    document.getElementById('timeValue').textContent = '0.333';
+    document.getElementById('playPause').textContent = 'Play';
+    document.getElementById('playPause').classList.remove('active');
+    document.getElementById('simMode').textContent = 'Sim Mode';
+    document.getElementById('simMode').classList.remove('active');
+    trail.length = 0;
+});
+
+// Add simMode button to HTML:
+<div class="control-group">
+    <h3>Simulation Mode</h3>
+    <button class="toggle-button" id="simMode">Sim Mode</button>
+</div>
+
+// Initialize
+animate(0); // Start with standard animation
