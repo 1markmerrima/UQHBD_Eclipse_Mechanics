@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Harmonic Space Simulator — R1 Piezone + Russell Spiral Octaves</title>
+  <style>
+    :root{
+      --bg1:#1a1a2e; --bg2:#16213e; --glass:rgba(255,255,255,.1);
+      --ink:#fff; --muted:rgba(255,255,255,.8); --line:rgba(255,255,255,.2);
+      --accent1:#ff6b6b; --accent1b:#ff8e8e; --accent2:#4ecdc4; --accent2b:#45b7b8;
+      --gold:#f6c945; --blue:#60a8ff; --vio:#a98bff;
+    }
+    html,body{height:100%}
+    body{
+      margin:0; padding:20px; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--ink); background:linear-gradient(135deg,var(--bg1),var(--bg2)); overflow-x:hidden;
+    }
+    .container{max-width:1200px; margin:0 auto}
+    .title{
+      text-align:center; font-size:2.3rem; margin:0 0 6px 0;
+      background:linear-gradient(45deg,var(--accent1),var(--accent2));
+      -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+    }
+    .subtitle{ text-align:center; font-size:1rem; opacity:.8; margin:0 0 18px 0 }
+    #canvas{
+      display:block; margin:0 auto; width:100%; max-width:1000px; height:auto;
+      background:rgba(255,255,255,.06); border-radius:16px; border:1px solid rgba(255,255,255,.18);
+      box-shadow:0 20px 40px rgba(0,0,0,.35); backdrop-filter:blur(10px);
+    }
+    .controls{
+      display:flex; flex-wrap:wrap; justify-content:center; gap:16px; margin:18px 0 6px;
+    }
+    .control-group{
+      display:flex; flex-direction:column; align-items:center; gap:6px;
+      background:var(--glass); padding:12px; border-radius:10px; min-width:160px;
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .control-group label{font-weight:700; font-size:.9rem}
+    .control-group input[type="range"]{ width:140px }
+    .control-group span{ font-size:.8rem; opacity:.85 }
+    .row{display:flex; flex-wrap:wrap; gap:16px; justify-content:center}
+    select, button, .checkline{
+      background:linear-gradient(45deg,rgba(255,255,255,.12),rgba(255,255,255,.08));
+      border:1px solid rgba(255,255,255,.18);
+      color:#fff; padding:10px 12px; border-radius:12px; font-weight:600; cursor:pointer;
+    }
+    button{
+      background:linear-gradient(45deg,var(--accent1),var(--accent2)); border:none;
+      padding:12px 18px; border-radius:24px; transition:transform .15s, box-shadow .15s;
+    }
+    button:hover{ transform:translateY(-2px); box-shadow:0 10px 18px rgba(0,0,0,.25) }
+    .legend{ display:flex; flex-wrap:wrap; justify-content:center; gap:28px; margin-top:10px }
+    .legend-item{ display:flex; align-items:center; gap:10px; font-size:.95rem; opacity:.95 }
+    .legend-color{ width:20px; height:20px; border-radius:50%; border:2px solid white }
+    .divider{ height:1px; background:rgba(255,255,255,.12); margin:16px auto; max-width:1100px }
+    small.note{ display:block; text-align:center; opacity:.7; margin-top:8px }
+    @media (max-width: 700px){
+      .control-group{min-width:140px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">Harmonic Space Simulator</h1>
+    <p class="subtitle">Top: <b>R1 Piezone</b> (piezometric wave) &nbsp; | &nbsp; Bottom: <b>R2 Fast Sphere</b> <i>or</i> <b>Spiral Octaves (Russell)</b></p>
+
+    <canvas id="canvas" width="1000" height="640"></canvas>
+
+    <div class="controls">
+      <div class="control-group">
+        <label>Frequency</label>
+        <input type="range" id="frequency" min="0.5" max="5" step="0.1" value="1">
+        <span id="freqValue">1.0</span>
+      </div>
+      <div class="control-group">
+        <label>Amplitude</label>
+        <input type="range" id="amplitude" min="20" max="150" step="5" value="80">
+        <span id="ampValue">80</span>
+      </div>
+      <div class="control-group">
+        <label>Wave Speed</label>
+        <input type="range" id="waveSpeed" min="0.5" max="3" step="0.1" value="1">
+        <span id="waveSpeedValue">1.0</span>
+      </div>
+      <div class="control-group">
+        <label>R2 Speed Mult.</label>
+        <input type="range" id="speedMultiplier" min="1" max="5" step="0.2" value="2">
+        <span id="speedValue">2.0×</span>
+      </div>
+
+      <!-- New: bottom panel mode -->
+      <div class="control-group">
+        <label>Bottom Mode</label>
+        <select id="bottomMode">
+          <option value="fastSphere">R2 Fast Sphere</option>
+          <option value="spiralRussell" selected>Spiral Octaves (Russell)</option>
+        </select>
+        <span>Choose bottom panel</span>
+      </div>
+
+      <!-- Spiral options -->
+      <div class="control-group">
+        <label>Spiral Octaves</label>
+        <input type="range" id="octaves" min="3" max="10" step="1" value="6">
+        <span id="octaveValue">6</span>
+      </div>
+      <div class="control-group">
+        <label>Planet Speed Scale</label>
+        <input type="range" id="planetSpeed" min="0.2" max="5" step="0.1" value="1.5">
+        <span id="planetSpeedValue">1.5×</span>
+      </div>
+      <div class="control-group">
+        <label class="checkline"><input type="checkbox" id="showGates" checked> Show Octave Gates</label>
+        <label class="checkline"><input type="checkbox" id="show13" checked> Show 13 Epoch Gates</label>
+        <label class="checkline"><input type="checkbox" id="show960" checked> Show 960° Arc</label>
+        <label class="checkline"><input type="checkbox" id="mirrorSpiral"> Antimatter Mirror</label>
+      </div>
+
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background:linear-gradient(45deg, var(--accent1), var(--accent1b));"></div>
+        <span>R1 Piezone (pressure-modulated wave)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:linear-gradient(45deg, var(--accent2), var(--accent2b));"></div>
+        <span>R2 Fast Sphere (accelerated lower half)</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background:linear-gradient(45deg, var(--gold), var(--blue));"></div>
+        <span>Spiral Octaves (Russell-inspired)</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <small class="note">
+      Spiral panel is a conceptual **frequency space**: logarithmic/octave spiral; "planets" are animated dots with relative frequencies (1/orbital period) mapped to radii;
+      octave gates show inert balance points; 13 gates = Enochian epoch segmentation; 960° overlay = your 8/3 arc.
+    </small>
+  </div>
+
+  <script>
+    /* ===== Canvas / Context ===== */
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    /* ===== Controls ===== */
+    const freqSlider = document.getElementById('frequency');
+    const ampSlider = document.getElementById('amplitude');
+    const waveSpeedSlider = document.getElementById('waveSpeed');
+    const speedSlider = document.getElementById('speedMultiplier');
+    const bottomModeSel = document.getElementById('bottomMode');
+
+    const freqValue = document.getElementById('freqValue');
+    const ampValue = document.getElementById('ampValue');
+    const waveSpeedValue = document.getElementById('waveSpeedValue');
+    const speedValue = document.getElementById('speedValue');
+
+    const resetBtn = document.getElementById('resetBtn');
+
+    // Spiral controls
+    const octavesSlider = document.getElementById('octaves');
+    const octaveValue = document.getElementById('octaveValue');
+    const planetSpeedSlider = document.getElementById('planetSpeed');
+    const planetSpeedValue = document.getElementById('planetSpeedValue');
+
+    const showGatesChk = document.getElementById('showGates');
+    const show13Chk = document.getElementById('show13');
+    const show960Chk = document.getElementById('show960');
+    const mirrorSpiralChk = document.getElementById('mirrorSpiral');
+
+    /* ===== State ===== */
+    let t = 0;             // master time
+    let frequency = parseFloat(freqSlider.value);
+    let amplitude = parseFloat(ampSlider.value);
+    let waveSpeed = parseFloat(waveSpeedSlider.value);
+    let speedMultiplier = parseFloat(speedSlider.value);
+
+    let bottomMode = bottomModeSel.value; // "fastSphere" | "spiralRussell"
+    let octaves = parseInt(octavesSlider.value, 10);
+    let planetSpeedScale = parseFloat(planetSpeedSlider.value);
+
+    /* ===== Geometry Helpers ===== */
+    const W = canvas.width, H = canvas.height;
+    const centerY = H/2;
+
+    /* ===== Event Wiring ===== */
+    const updateReadouts = () => {
+      freqValue.textContent = frequency.toFixed(1);
+      ampValue.textContent = amplitude.toFixed(0);
+      waveSpeedValue.textContent = waveSpeed.toFixed(1);
+      speedValue.textContent = speedMultiplier.toFixed(1) + '×';
+      octaveValue.textContent = octaves.toString();
+      planetSpeedValue.textContent = planetSpeedScale.toFixed(1) + '×';
+    };
+    updateReadouts();
+
+    freqSlider.oninput = () => { frequency = parseFloat(freqSlider.value); updateReadouts(); };
+    ampSlider.oninput = () => { amplitude = parseFloat(ampSlider.value); updateReadouts(); };
+    waveSpeedSlider.oninput = () => { waveSpeed = parseFloat(waveSpeedSlider.value); updateReadouts(); };
+    speedSlider.oninput = () => { speedMultiplier = parseFloat(speedSlider.value); updateReadouts(); };
+    bottomModeSel.onchange = () => { bottomMode = bottomModeSel.value; };
+    octavesSlider.oninput = () => { octaves = parseInt(octavesSlider.value,10); updateReadouts(); };
+    planetSpeedSlider.oninput = () => { planetSpeedScale = parseFloat(planetSpeedSlider.value); updateReadouts(); };
+    resetBtn.onclick = () => { t = 0; };
+
+    /* ===== Grid / Backdrop ===== */
+    function drawGrid() {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+
+      for (let y = 50; y < H; y += 50) { // horizontal
+        ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke();
+      }
+      for (let x = 50; x < W; x += 100) { // vertical
+        ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke();
+      }
+
+      // Center line
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath(); ctx.moveTo(0, centerY); ctx.lineTo(W, centerY); ctx.stroke();
+    }
+
+    /* ===== Top: R1 Piezone Wave ===== */
+    function drawR1Piezone() {
+      ctx.beginPath();
+      ctx.strokeStyle = '#ff6b6b';
+      ctx.lineWidth = 3;
+      let first = true;
+
+      const points = 900;
+      for (let i=0;i<=points;i++){
+        const x = i * (W/points);
+        const rad = (x / W) * 4 * Math.PI * frequency + t * waveSpeed;
+        let y = centerY - Math.sin(rad) * amplitude;
+
+        // Piezo modulation on upper half (pressure-driven subtle warble)
+        if (y < centerY) {
+          const pressure = (centerY - y) / Math.max(1, amplitude);
+          y += Math.sin(t * 2.0) * 10 * pressure;
+        }
+
+        if (first){ ctx.moveTo(x,y); first=false; } else { ctx.lineTo(x,y); }
+      }
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#ff9a9a';
+      ctx.font = '600 14px system-ui, Arial';
+      ctx.fillText('R1 PIEZONE (upper)', 16, 26);
+    }
+
+    /* ===== Bottom Option A: R2 Fast Sphere (original) ===== */
+    function drawR2FastSphere() {
+      ctx.beginPath();
+      ctx.strokeStyle = '#4ecdc4';
+      ctx.lineWidth = 3;
+
+      const points = 900;
+      let first = true;
+
+      for (let i=0;i<=points;i++){
+        const x = i * (W/points);
+        const base = (x / W) * 4 * Math.PI * frequency + t * waveSpeed;
+        let y = centerY - Math.sin(base) * amplitude;
+
+        if (y > centerY){
+          const fastPhase = (x / W) * 4 * Math.PI * frequency + t * waveSpeed * speedMultiplier;
+          y = centerY - Math.sin(fastPhase) * amplitude;
+
+          // spherical wobble on lower region
+          const wobble = Math.cos(t * 3.0) * 15;
+          y += wobble * ((y - centerY) / Math.max(1, amplitude));
+        }
+
+        if (first){ ctx.moveTo(x,y); first=false; } else { ctx.lineTo(x,y); }
+      }
+      ctx.stroke();
+
+      // Label
+      ctx.fillStyle = '#a5f3ee';
+      ctx.font = '600 14px system-ui, Arial';
+      ctx.fillText('R2 FAST SPHERE (lower)', 16, H - 14);
+    }
+
+    /* ===== Bottom Option B: Russell Spiral Octaves ===== */
+
+    // Conceptual "planet" data: orbital period in days (approx), for relative frequency mapping
+    const PLANETS = [
+      { name:'Mercury', period:87.969, color:'#ffdf6e' },
+      { name:'Venus'  , period:224.701, color:'#ffc17a' },
+      { name:'Earth'  , period:365.256, color:'#8fd3ff' },
+      { name:'Mars'   , period:686.980, color:'#ff8f7b' },
+      { name:'Jupiter', period:4332.589, color:'#ffd59e' },
+      { name:'Saturn' , period:10759.22, color:'#e6d4a6' }
+      // (extend as desired)
+    ];
+    // Normalize to frequencies f = 1/period
+    PLANETS.forEach(p => p.f = 1.0 / p.period);
+
+    // Map frequency to radius in the spiral panel
+    function mapFreqToRadius(f, rMin, rMax) {
+      // Normalize f across min..max of our set (log-ish for nicer spacing)
+      const fmin = Math.min(...PLANETS.map(p=>p.f));
+      const fmax = Math.max(...PLANETS.map(p=>p.f));
+      // Use sqrt or log scaling to avoid clustering
+      const nf = (Math.sqrt(f) - Math.sqrt(fmin)) / (Math.sqrt(fmax) - Math.sqrt(fmin) + 1e-6);
+      return rMin + nf * (rMax - rMin);
+    }
+
+    function drawSpiralRussell() {
+      // Bottom half panel geometry
+      const panelTop = centerY;
+      const panelHeight = H - panelTop;
+      const cx = W * 0.5;
+      const cy = panelTop + panelHeight * 0.52;
+      const rMax = Math.min(W, panelHeight) * 0.46;
+      const rMin = rMax * 0.10;
+
+      // Backplate
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, panelTop, W, panelHeight);
+      ctx.clip();
+
+      // Soft radial glow
+      const grad = ctx.createRadialGradient(cx, cy, rMin*0.2, cx, cy, rMax*1.1);
+      grad.addColorStop(0, 'rgba(255,255,255,0.10)');
+      grad.addColorStop(1, 'rgba(255,255,255,0.02)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rMax*1.15, 0, Math.PI*2);
+      ctx.fill();
+
+      // Draw octave spiral: r = r0 * 2^(theta / 2π)
+      // Each full turn = one octave (doubling)
+      const turns = octaves; // number of octaves to draw
+      const thetaMax = turns * Math.PI * 2;
+      const steps = 1200;
+
+      ctx.lineWidth = 2;
+      const spiralGrad = ctx.createLinearGradient(0, panelTop, 0, panelTop+panelHeight);
+      spiralGrad.addColorStop(0, '#f6c945');
+      spiralGrad.addColorStop(1, '#60a8ff');
+      ctx.strokeStyle = spiralGrad;
+
+      ctx.beginPath();
+      for (let i=0;i<=steps;i++){
+        const th = i/steps * thetaMax;
+        const scale = Math.pow(2, th / (2*Math.PI)); // 2^(θ/2π)
+        const r = rMin + (rMax - rMin) * ((scale - 1) / (Math.pow(2, turns) - 1));
+        const x = cx + r * Math.cos(th + t*0.05); // slow global phase drift
+        const y = cy + r * Math.sin(th + t*0.05);
+        if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+      }
+      ctx.stroke();
+
+      // Optional antimatter mirror (counter-spiral)
+      if (mirrorSpiralChk.checked){
+        ctx.globalAlpha = 0.55;
+        ctx.strokeStyle = '#a98bff';
+        ctx.beginPath();
+        for (let i=0;i<=steps;i++){
+          const th = i/steps * thetaMax;
+          const scale = Math.pow(2, th / (2*Math.PI));
+          const r = rMin + (rMax - rMin) * ((scale - 1) / (Math.pow(2, turns) - 1));
+          const x = cx + r * Math.cos(-th + t*0.05);
+          const y = cy + r * Math.sin(-th + t*0.05);
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+      }
+
+      // Octave gates (inert balance points): every full turn
+      if (showGatesChk.checked){
+        ctx.save();
+        ctx.lineWidth = 1.6;
+        ctx.setLineDash([6,6]);
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = '700 11px system-ui, Arial';
+        for (let k=0;k<=turns;k++){
+          const th = k * 2*Math.PI;
+          const r = rMax; // draw as outer ring marker
+          ctx.beginPath();
+          ctx.arc(cx, cy, r, th-0.01, th+0.01); // small tick on ring
+          ctx.stroke();
+
+          // radial line
+          const x1 = cx + (rMin*0.95) * Math.cos(th);
+          const y1 = cy + (rMin*0.95) * Math.sin(th);
+          const x2 = cx + (r*1.02) * Math.cos(th);
+          const y2 = cy + (r*1.02) * Math.sin(th);
+          ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+
+          const lblx = cx + (r*1.06) * Math.cos(th);
+          const lbly = cy + (r*1.06) * Math.sin(th);
+          ctx.fillText(`Octave ${k}`, lblx-24, lbly+4);
+        }
+        ctx.restore();
+      }
+
+      // 13 epoch gates (Enoch segmentation)
+      if (show13Chk.checked){
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+        ctx.lineWidth = 1;
+        const sectors = 13;
+        for (let s=0;s<sectors;s++){
+          const th = (s/sectors) * 2*Math.PI;
+          const x1 = cx + (rMin*0.75)*Math.cos(th);
+          const y1 = cy + (rMin*0.75)*Math.sin(th);
+          const x2 = cx + (rMax*1.02)*Math.cos(th);
+          const y2 = cy + (rMax*1.02)*Math.sin(th);
+          ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      // 960° arc overlay (8/3 turns)
+      if (show960Chk.checked){
+        const arcTurns = 8/3; // 2.666...
+        const thSpan = arcTurns * 2*Math.PI;
+        const th0 = (t*0.15) % (2*Math.PI); // slow drift start
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#ffffff';
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        const arcSteps = 400;
+        for (let i=0;i<=arcSteps;i++){
+          const th = th0 + (i/arcSteps)*thSpan;
+          const scale = Math.pow(2, (th % (turns*2*Math.PI)) / (2*Math.PI));
+          const r = rMin + (rMax - rMin) * ((scale - 1) / (Math.pow(2, turns) - 1));
+          const x = cx + r * Math.cos(th);
+          const y = cy + r * Math.sin(th);
+          if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+      }
+
+      // Planet "frequencies" as orbits (conceptual)
+      PLANETS.forEach((p, idx) => {
+        const r = mapFreqToRadius(p.f, rMin*1.02, rMax*0.96);
+        // Animate angle: higher f → faster; scaled for visibility
+        const omega = (p.f) * 120 * planetSpeedScale; // arbitrary scale for animation
+        const ang = t * (omega/180*Math.PI) + idx * 0.7;
+
+        // Trail
+        ctx.strokeStyle = p.color + 'AA';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let m=0;m<=50;m++){
+          const lag = (50-m) * 0.006;
+          const a2 = ang - lag;
+          const x2 = cx + r * Math.cos(a2);
+          const y2 = cy + r * Math.sin(a2);
+          if (m===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2);
+        }
+        ctx.stroke();
+
+        // Body
+        const x = cx + r * Math.cos(ang);
+        const y = cy + r * Math.sin(ang);
+        ctx.fillStyle = p.color;
+        ctx.beginPath(); ctx.arc(x,y,4,0,Math.PI*2); ctx.fill();
+
+        // Label
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '600 11px system-ui, Arial';
+        ctx.fillText(p.name, x+6, y-6);
+      });
+
+      // Legend for the panel
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = '600 14px system-ui, Arial';
+      ctx.fillText('SPIRAL OCTAVES (Russell-inspired frequency space)', 16, H-16);
+
+      ctx.restore();
+    }
+
+    /* ===== Particles riding energy (top embellishment) ===== */
+    function drawWaveParticles() {
+      const particleCount = 22;
+      for (let i=0;i<particleCount;i++){
+        const x = (i / (particleCount-1)) * W;
+        const rad = (x / W) * 4 * Math.PI * frequency + t * waveSpeed;
+        let y = centerY - Math.sin(rad) * amplitude;
+
+        // Color by region
+        if (y < centerY) ctx.fillStyle = 'rgba(255,107,107,0.7)';
+        else {
+          // if in lower half and mode=fastSphere, use fast phase for position
+          if (bottomMode === 'fastSphere'){
+            const fastR = (x/W) * 4 * Math.PI * frequency + t * waveSpeed * speedMultiplier;
+            y = centerY - Math.sin(fastR) * amplitude;
+          }
+          ctx.fillStyle = 'rgba(76,205,196,0.7)';
+        }
+        ctx.beginPath(); ctx.arc(x, y, 3.6, 0, Math.PI*2); ctx.fill();
+      }
+    }
+
+    /* ===== Frame ===== */
+    function draw() {
+      // Clear
+      ctx.clearRect(0,0,W,H);
+
+      // Subtle glass background
+      ctx.fillStyle = 'rgba(255,255,255,0.06)';
+      ctx.fillRect(0,0,W,H);
+
+      drawGrid();
+      drawR1Piezone();
+
+      // Bottom panel
+      if (bottomMode === 'fastSphere') {
+        drawR2FastSphere();
+      } else {
+        drawSpiralRussell();
+      }
+
+      drawWaveParticles();
+
+      // Time + Labels
+      ctx.fillStyle = 'rgba(255,255,255,0.85)';
+      ctx.font = '600 14px system-ui, Arial';
+      ctx.fillText(`Time: ${(t*0.1).toFixed(2)}s`, W - 140, 26);
+    }
+
+    /* ===== Animate ===== */
+    function animate(){
+      draw();
+      t += 0.05;
+      requestAnimationFrame(animate);
+    }
+    animate();
+  </script>
+</body>
+</html>
